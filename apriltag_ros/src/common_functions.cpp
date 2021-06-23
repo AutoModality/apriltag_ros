@@ -581,6 +581,12 @@ void TagDetector::drawDetections (cv_bridge::CvImagePtr image)
     line(image->image, cv::Point((int)det->p[2][0], (int)det->p[2][1]),
          cv::Point((int)det->p[3][0], (int)det->p[3][1]),
          cv::Scalar(0xff, 0, 0)); // blue
+         
+    //crosshair vertical
+    line(image->image, cv::Point(image->image.cols/2,image->image.rows/2 - 10), cv::Point(image->image.cols/2, image->image.rows/2 + 10), cv::Scalar(0, 0xff, 0));
+    //crosshair horizontal
+    line(image->image, cv::Point(image->image.cols/2 - 10,image->image.rows/2), cv::Point(image->image.cols/2 + 10,image->image.rows/2), cv::Scalar(0, 0xff, 0)); 
+    
 
     // Print tag ID in the middle of the tag
     std::stringstream ss;
@@ -595,6 +601,7 @@ void TagDetector::drawDetections (cv_bridge::CvImagePtr image)
                 cv::Point((int)(det->c[0]-textsize.width/2),
                           (int)(det->c[1]+textsize.height/2)),
                 fontface, fontscale, cv::Scalar(0xff, 0x99, 0), 2);
+   
   }
 }
 

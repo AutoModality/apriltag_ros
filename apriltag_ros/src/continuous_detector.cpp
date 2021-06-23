@@ -53,10 +53,7 @@ void ContinuousDetector::onInit ()
                           &ContinuousDetector::imageCallback, this);
   tag_detections_publisher_ =
       nh.advertise<AprilTagDetectionArray>("tag_detections", 1);
-  if (draw_tag_detections_image_)
-  {
-    tag_detections_image_publisher_ = it_->advertise("tag_detections_image", 1);
-  }
+  tag_detections_image_publisher_ = it_->advertise("tag_detections_image", 1);
 }
 
 void ContinuousDetector::imageCallback (
@@ -92,7 +89,7 @@ void ContinuousDetector::imageCallback (
 
   // Publish the camera image overlaid by outlines of the detected tags and
   // their payload values
-  if (draw_tag_detections_image_)
+  if (tag_detections_image_publisher_.getNumSubscribers() > 0)
   {
     tag_detector_->drawDetections(cv_image_);
     tag_detections_image_publisher_.publish(cv_image_->toImageMsg());
