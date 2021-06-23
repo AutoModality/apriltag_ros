@@ -583,9 +583,9 @@ void TagDetector::drawDetections (cv_bridge::CvImagePtr image)
          cv::Scalar(0xff, 0, 0)); // blue
          
     //crosshair vertical
-    line(image->image, cv::Point(image->image.cols/2,image->image.rows/2 - 10), cv::Point(image->image.cols/2, image->image.rows/2 + 10), cv::Scalar(0, 0xff, 0));
+    //line(image->image, cv::Point(image->image.cols/2,image->image.rows/2 - 10), cv::Point(image->image.cols/2, image->image.rows/2 + 10), cv::Scalar(0, 0xff, 0));
     //crosshair horizontal
-    line(image->image, cv::Point(image->image.cols/2 - 10,image->image.rows/2), cv::Point(image->image.cols/2 + 10,image->image.rows/2), cv::Scalar(0, 0xff, 0)); 
+    //line(image->image, cv::Point(image->image.cols/2 - 10,image->image.rows/2), cv::Point(image->image.cols/2 + 10,image->image.rows/2), cv::Scalar(0, 0xff, 0));
     
 
     // Print tag ID in the middle of the tag

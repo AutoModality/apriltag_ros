@@ -83,6 +83,8 @@ void ContinuousDetector::imageCallback (
     return;
   }
 
+  preprocess(cv_image_);
+
   // Publish detected tags in the image by AprilTag 2
   tag_detections_publisher_.publish(
       tag_detector_->detectTags(cv_image_,camera_info));
@@ -94,6 +96,39 @@ void ContinuousDetector::imageCallback (
     tag_detector_->drawDetections(cv_image_);
     tag_detections_image_publisher_.publish(cv_image_->toImageMsg());
   }
+}
+
+ void ContinuousDetector::preprocess(cv_bridge::CvImagePtr image)
+{
+
+	 //gamma control approach
+	 //image->image.convertTo(image->image, CV_64F);
+	 //cv::pow(image->image, 0.3, image->image);
+	 //image->image.convertTo(image->image, CV_8U);
+
+	 //adaptive threhsolding approach
+	 //cv::adaptiveThreshold(image->image, image->image, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 11, 2);
+
+	 //scanner approach
+	 cv::Mat dilated;
+	 int morph_size = 3;
+	 cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2 * morph_size + 1, 2 * morph_size + 1), cv::Point(morph_size, morph_size));
+	 cv::dilate(image->image, dilated, element);
+
+	 cv::Mat bg_img;
+	cv::medianBlur(dilated, bg_img, 21);
+
+	cv::Mat diff_img;
+	cv::absdiff(image->image, bg_img, diff_img);
+	cv::bitwise_not(diff_img, diff_img);
+
+	cv::Mat norm_img;
+	cv::normalize(diff_img, norm_img, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+
+	image->image = norm_img;
+	//cv::adaptiveThreshold(image->image, image->image, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 201, 0);
+
+
 }
 
 } // namespace apriltag_ros

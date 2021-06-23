@@ -60,6 +60,8 @@ class ContinuousDetector: public nodelet::Nodelet
 
   void onInit();
 
+  void preprocess(cv_bridge::CvImagePtr image);
+
   void imageCallback(const sensor_msgs::ImageConstPtr& image_rect,
                      const sensor_msgs::CameraInfoConstPtr& camera_info);
 
