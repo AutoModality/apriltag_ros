@@ -45,6 +45,10 @@ void ContinuousDetector::onInit ()
   tag_detector_ = std::shared_ptr<TagDetector>(new TagDetector(pnh));
   draw_tag_detections_image_ = getAprilTagOption<bool>(pnh, 
       "publish_tag_detections_image", false);
+
+  preprocess_image_ = getAprilTagOption<bool>(pnh,
+	      "preprocess_image", false);
+
   it_ = std::shared_ptr<image_transport::ImageTransport>(
       new image_transport::ImageTransport(nh));
 
@@ -83,7 +87,11 @@ void ContinuousDetector::imageCallback (
     return;
   }
 
-  preprocess(cv_image_);
+  if(preprocess_image_)
+  {
+	  preprocess(cv_image_);
+  }
+
 
   // Publish detected tags in the image by AprilTag 2
   tag_detections_publisher_.publish(
