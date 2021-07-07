@@ -45,6 +45,10 @@ void ContinuousDetector::onInit ()
   tag_detector_ = std::shared_ptr<TagDetector>(new TagDetector(pnh));
   draw_tag_detections_image_ = getAprilTagOption<bool>(pnh, 
       "publish_tag_detections_image", false);
+
+  preprocess_image_ = getAprilTagOption<bool>(pnh,
+	      "preprocess_image", false);
+
   it_ = std::shared_ptr<image_transport::ImageTransport>(
       new image_transport::ImageTransport(nh));
 
@@ -53,10 +57,7 @@ void ContinuousDetector::onInit ()
                           &ContinuousDetector::imageCallback, this);
   tag_detections_publisher_ =
       nh.advertise<AprilTagDetectionArray>("tag_detections", 1);
-  if (draw_tag_detections_image_)
-  {
-    tag_detections_image_publisher_ = it_->advertise("tag_detections_image", 1);
-  }
+  tag_detections_image_publisher_ = it_->advertise("tag_detections_image", 1);
 }
 
 void ContinuousDetector::imageCallback (
@@ -86,17 +87,56 @@ void ContinuousDetector::imageCallback (
     return;
   }
 
+  if(preprocess_image_)
+  {
+	  preprocess(cv_image_);
+  }
+
+
   // Publish detected tags in the image by AprilTag 2
   tag_detections_publisher_.publish(
       tag_detector_->detectTags(cv_image_,camera_info));
 
   // Publish the camera image overlaid by outlines of the detected tags and
   // their payload values
-  if (draw_tag_detections_image_)
+  if (tag_detections_image_publisher_.getNumSubscribers() > 0)
   {
     tag_detector_->drawDetections(cv_image_);
     tag_detections_image_publisher_.publish(cv_image_->toImageMsg());
   }
+}
+
+ void ContinuousDetector::preprocess(cv_bridge::CvImagePtr image)
+{
+
+	 //gamma control approach
+	 //image->image.convertTo(image->image, CV_64F);
+	 //cv::pow(image->image, 0.3, image->image);
+	 //image->image.convertTo(image->image, CV_8U);
+
+	 //adaptive threhsolding approach
+	 //cv::adaptiveThreshold(image->image, image->image, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 11, 2);
+
+	 //scanner approach
+	 cv::Mat dilated;
+	 int morph_size = 3;
+	 cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2 * morph_size + 1, 2 * morph_size + 1), cv::Point(morph_size, morph_size));
+	 cv::dilate(image->image, dilated, element);
+
+	 cv::Mat bg_img;
+	cv::medianBlur(dilated, bg_img, 21);
+
+	cv::Mat diff_img;
+	cv::absdiff(image->image, bg_img, diff_img);
+	cv::bitwise_not(diff_img, diff_img);
+
+	cv::Mat norm_img;
+	cv::normalize(diff_img, norm_img, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+
+	image->image = norm_img;
+	//cv::adaptiveThreshold(image->image, image->image, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 201, 0);
+
+
 }
 
 } // namespace apriltag_ros
