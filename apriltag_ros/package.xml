@@ -23,6 +23,7 @@
   <depend>Eigen3</depend>
   <depend>opencv</depend>
   <depend>brain_box_msgs</depend>
+  <depend>am_utils</depend>
 
   <exec_depend>ros2launch</exec_depend>
 

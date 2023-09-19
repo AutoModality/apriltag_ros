@@ -29,7 +29,7 @@
  * Technology.
  */
 
-#include "apriltag_ros/common_functions.h"
+#include <apriltag_ros/common_functions.h>
 #include "image_geometry/pinhole_camera_model.h"
 
 #include "common/homography.h"
@@ -45,16 +45,18 @@
 namespace apriltag_ros
 {
 
-TagDetector::TagDetector(ros::NodeHandle pnh) :
-    family_(getAprilTagOption<std::string>(pnh, "tag_family", "tag36h11")),
-    threads_(getAprilTagOption<int>(pnh, "tag_threads", 0)),
-    decimate_(getAprilTagOption<double>(pnh, "tag_decimate", 1.0)),
-    blur_(getAprilTagOption<double>(pnh, "tag_blur", 0.0)),
-    refine_edges_(getAprilTagOption<int>(pnh, "tag_refine_edges", 1)),
-    debug_(getAprilTagOption<int>(pnh, "tag_debug", 0)),
-    max_hamming_distance_(getAprilTagOption<int>(pnh, "max_hamming_dist", 2)),
-    publish_tf_(getAprilTagOption<bool>(pnh, "publish_tf", false))
+TagDetector::TagDetector()
 {
+
+  am::getParam<std::string>("tag_family",family_,"tag36h11");
+  am::getParam<double>("tag_decimate", decimate_, 1.0);
+  am::getParam<double>("tag_blur", blur_, 0.0);
+  am::getParam<int>("tag_threads", threads_, 0);
+  am::getParam<int>("tag_refine_edges", refine_edges_, 1);
+  am::getParam<int>("max_hamming_dist", max_hamming_distance_, 2);
+  am::getParam<int>("tag_debug", debug_, 0);
+  am::getParam<bool>("publish_tf", publish_tf_, false);
+
   // Parse standalone tag descriptions specified by user (stored on ROS
   // parameter server)
   XmlRpc::XmlRpcValue standalone_tag_descriptions;

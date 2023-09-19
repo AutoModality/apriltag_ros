@@ -28,6 +28,7 @@ set (dependencies ament_cmake
                   tf2
                   tf2_ros
                   image_transport
+                  am_utils
                   sensor_msgs)
 
 find_package(Eigen3 REQUIRED)
@@ -70,12 +71,16 @@ include_directories(include
 
 add_library(${PROJECT_NAME}_common src/common_functions.cpp)
 target_link_libraries(${PROJECT_NAME}_common ${OpenCV_LIBRARIES} apriltag::apriltag)
+ament_target_dependencies(${PROJECT_NAME}_common ${dependencies})
 
 add_library(${PROJECT_NAME}_continuous_detector src/continuous_detector.cpp)
 target_link_libraries(${PROJECT_NAME}_continuous_detector ${PROJECT_NAME}_common ${catkin_LIBRARIES})
+ament_target_dependencies(${PROJECT_NAME}_continuous_detector ${dependencies})
 
 add_library(${PROJECT_NAME}_single_image_detector src/single_image_detector.cpp)
 target_link_libraries(${PROJECT_NAME}_single_image_detector ${PROJECT_NAME}_common ${catkin_LIBRARIES})
+ament_target_dependencies(${PROJECT_NAME}_single_image_detector ${dependencies})
+
 
 add_executable(${PROJECT_NAME}_continuous_node src/${PROJECT_NAME}_continuous_node.cpp)
 target_link_libraries(${PROJECT_NAME}_continuous_node ${PROJECT_NAME}_continuous_detector)
