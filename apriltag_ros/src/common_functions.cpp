@@ -605,65 +605,71 @@ void TagDetector::drawDetections (cv_bridge::CvImagePtr image)
 }
 
 // Parse standalone tag descriptions
-std::map<int, StandaloneTagDescription> TagDetector::parseStandaloneTags (
-    XmlRpc::XmlRpcValue& standalone_tags)
+std::map<int, StandaloneTagDescription> TagDetector::parseStandaloneTags ()
 {
   // Create map that will be filled by the function and returned in the end
   std::map<int, StandaloneTagDescription> descriptions;
-  // Ensure the type is correct
-  ROS_ASSERT(standalone_tags.getType() == XmlRpc::XmlRpcValue::TypeArray);
-  // Loop through all tag descriptions
-  for (int32_t i = 0; i < standalone_tags.size(); i++)
+  int standalone_tags_cnt = 0;
+  am::getParam<int>("standalone_tags_num", standalone_tags_cnt, standalone_tags_cnt);
+
+  if(standalone_tags_cnt <= 0)
   {
-
-    // i-th tag description
-    XmlRpc::XmlRpcValue& tag_description = standalone_tags[i];
-
-    // Assert the tag description is a struct
-    ROS_ASSERT(tag_description.getType() ==
-               XmlRpc::XmlRpcValue::TypeStruct);
-    // Assert type of field "id" is an int
-    ROS_ASSERT(tag_description["id"].getType() ==
-               XmlRpc::XmlRpcValue::TypeInt);
-    // Assert type of field "size" is a double
-    ROS_ASSERT(tag_description["size"].getType() ==
-               XmlRpc::XmlRpcValue::TypeDouble);
-
-    int id = (int)tag_description["id"]; // tag id
-    // Tag size (square, side length in meters)
-    double size = (double)tag_description["size"];
-
-    // Custom frame name, if such a field exists for this tag
-    std::string frame_name;
-    if(tag_description.hasMember("name"))
-    {
-      // Assert type of field "name" is a string
-      ROS_ASSERT(tag_description["name"].getType() ==
-                 XmlRpc::XmlRpcValue::TypeString);
-      frame_name = (std::string)tag_description["name"];
-    }
-    else
-    {
-      std::stringstream frame_name_stream;
-      frame_name_stream << "tag_" << id;
-      frame_name = frame_name_stream.str();
-    }
-
-    StandaloneTagDescription description(id, size, frame_name);
-    ROS_INFO_STREAM("Loaded tag config: " << id << ", size: " <<
-                    size << ", frame_name: " << frame_name.c_str());
-    // Add this tag's description to map of descriptions
-    descriptions.insert(std::make_pair(id, description));
+    return descriptions;
   }
 
+  for(int i = 0 ; i < standalone_tags_cnt; i++)
+  {
+    std::string param_str = "standalone_tags_" + std::to_string(i);
+
+    StandaloneTagDescription tag_description;
+    tag_description.id_ = -1;
+    am::getParam<int>(param_str+".id", tag_description.id_, tag_description.id_);
+    tag_description.size_ = -1.0;
+    am::getParam<double>(param_str+".size", tag_description.size_, tag_description.size_);
+    tag_description.frame_name_ = "";
+    am::getParam<std::string>(param_str+".name", tag_description.frame_name_, tag_description.frame_name_);
+
+    if(tag_description.frame_name_ == "" || tag_description.size_ <= 0.0 || tag_description.id_ < 0)
+    {
+      ROS_WARN("Standalone tag with the following configuration is rejected: id:[%d], size:[%f], name:[%f]", tag_description.id_,
+      tag_description.size_, tag_description.frame_name_);
+      continue;
+    }
+
+    descriptions.insert(std::make_pair(tag_description.id_, tag_description));
+  }
   return descriptions;
 }
 
 // parse tag bundle descriptions
-std::vector<TagBundleDescription > TagDetector::parseTagBundles (
-    XmlRpc::XmlRpcValue& tag_bundles)
+std::vector<TagBundleDescription > TagDetector::parseTagBundles ()
 {
-  std::vector<TagBundleDescription > descriptions;
+  std::vector<TagBundleDescription> descriptions;
+  int tag_bundles_cnt = 0;
+  am::getParam<int>("tag_bundles_num", tag_bundles_cnt, tag_bundles_cnt);
+
+  if(tag_bundles_cnt <= 0)
+  {
+    return descriptions;
+  }
+
+  for(int i = 0; i < tag_bundles_cnt; i++)
+  {
+    std::string param_str = "tag_bundles_" + std::to_string(i);
+    std::string name = "";
+    am::getParam<std::string>(param_str+".name", name, name);
+
+    TagBundleDescription tbd(name);
+    int layout_cnt = -1;
+    am::getParam<int>(param_str+".layout_num", layout_cnt, layout_cnt);
+    for(int j = 0; j < layout_cnt; j++)
+    {
+      std::string layout_str = "layout_"+std::to_string(j);
+      
+    }
+
+  }
+
   ROS_ASSERT(tag_bundles.getType() == XmlRpc::XmlRpcValue::TypeArray);
 
   // Loop through all tag bundle descritions

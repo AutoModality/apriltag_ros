@@ -69,15 +69,6 @@
 namespace apriltag_ros
 {
 
-template<typename T>
-T getAprilTagOption(ros::NodeHandle& pnh,
-                    const std::string& param_name, const T & default_val)
-{
-  T param_val;
-  pnh.param<T>(param_name, param_val, default_val);
-  return param_val;
-}
-
 // Stores the properties of a tag member of a bundle
 struct TagBundleMember
 {
@@ -190,8 +181,7 @@ class TagDetector
   ~TagDetector();
 
   // Store standalone and bundle tag descriptions
-  std::map<int, StandaloneTagDescription> parseStandaloneTags(
-      XmlRpc::XmlRpcValue& standalone_tag_descriptions);
+  std::map<int, StandaloneTagDescription> parseStandaloneTags();
   std::vector<TagBundleDescription > parseTagBundles(
       XmlRpc::XmlRpcValue& tag_bundles);
   double xmlRpcGetDouble(

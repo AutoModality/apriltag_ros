@@ -1,7 +1,7 @@
 # AprilTag 3 code parameters
 # Find descriptions in apriltag/include/apriltag.h:struct apriltag_detector
 #                      apriltag/include/apriltag.h:struct apriltag_family
-tag_family:        'tag36h11' # options: tagStandard52h13, tagStandard41h12, tag36h11, tag25h9, tag16h5, tagCustom48h12, tagCircle21h7, tagCircle49h12
+tag_family:        'tagStandard41h12' # options: tagStandard52h13, tagStandard41h12, tag36h11, tag25h9, tag16h5, tagCustom48h12, tagCircle21h7, tagCircle49h12
 tag_threads:       2          # default: 2
 tag_decimate:      1.0        # default: 1.0
 tag_blur:          0.0        # default: 0.0
@@ -33,9 +33,16 @@ transport_hint:    "raw"      # default: raw, see http://wiki.ros.org/image_tran
 #     {id: ID, size: SIZE, name: NAME},
 #     ...
 #   ]
-standalone_tags:
-  [
-  ]
+
+standalone_tags_num: 0
+#standalone_tags_X:
+#  id: ID
+#  size: SIZE e.g. 0.036717255 ----> 3.6 cm by 3.6 cm
+#  name: 'NAME'
+
+
+
+
 # ## Tag bundle definitions
 # ### Remarks
 #
@@ -45,6 +52,22 @@ standalone_tags:
 #
 # ### Syntax
 #
+tag_bundles_num: 0
+#tag_bundles_X:
+#  name: 'CUSTOM_BUNDLE_NAME'
+#  layout_num: 0
+#  layout_X:
+#    id: ID
+#    size: SIZE e.g. 0.036717255 ----> 3.6 cm by 3.6 cm
+#    x: X_POS
+#    y: Y_POS
+#    z: Z_POS
+#    qx: QUAT_X_VAL
+#    qy: QUAT_Y_VAL
+#    qz: QUAT_Z_VAL
+#    qw: QUAT_W_VAL
+
+
 # tag_bundles:
 #   [
 #     {
