@@ -28,6 +28,7 @@ set (dependencies ament_cmake
                   tf2
                   tf2_ros
                   image_transport
+                  image_geometry
                   am_utils
                   sensor_msgs)
 
@@ -77,22 +78,22 @@ add_library(${PROJECT_NAME}_continuous_detector src/continuous_detector.cpp)
 target_link_libraries(${PROJECT_NAME}_continuous_detector ${PROJECT_NAME}_common ${catkin_LIBRARIES})
 ament_target_dependencies(${PROJECT_NAME}_continuous_detector ${dependencies})
 
-add_library(${PROJECT_NAME}_single_image_detector src/single_image_detector.cpp)
-target_link_libraries(${PROJECT_NAME}_single_image_detector ${PROJECT_NAME}_common ${catkin_LIBRARIES})
-ament_target_dependencies(${PROJECT_NAME}_single_image_detector ${dependencies})
+#add_library(${PROJECT_NAME}_single_image_detector src/single_image_detector.cpp)
+#target_link_libraries(${PROJECT_NAME}_single_image_detector ${PROJECT_NAME}_common ${catkin_LIBRARIES})
+#ament_target_dependencies(${PROJECT_NAME}_single_image_detector ${dependencies})
 
 
 add_executable(${PROJECT_NAME}_continuous_node src/${PROJECT_NAME}_continuous_node.cpp)
 target_link_libraries(${PROJECT_NAME}_continuous_node ${PROJECT_NAME}_continuous_detector)
 ament_target_dependencies(${PROJECT_NAME}_continuous_node ${dependencies})
 
-add_executable(${PROJECT_NAME}_single_image_server_node src/${PROJECT_NAME}_single_image_server_node.cpp)
-target_link_libraries(${PROJECT_NAME}_single_image_server_node ${PROJECT_NAME}_single_image_detector )
-ament_target_dependencies(${PROJECT_NAME}_single_image_server_node ${dependencies})
+#add_executable(${PROJECT_NAME}_single_image_server_node src/${PROJECT_NAME}_single_image_server_node.cpp)
+#target_link_libraries(${PROJECT_NAME}_single_image_server_node ${PROJECT_NAME}_single_image_detector )
+#ament_target_dependencies(${PROJECT_NAME}_single_image_server_node ${dependencies})
 
-add_executable(${PROJECT_NAME}_single_image_client_node src/${PROJECT_NAME}_single_image_client_node.cpp)
-target_link_libraries(${PROJECT_NAME}_single_image_client_node ${PROJECT_NAME}_common)
-ament_target_dependencies(${PROJECT_NAME}_single_image_client_node ${dependencies})
+#add_executable(${PROJECT_NAME}_single_image_client_node src/${PROJECT_NAME}_single_image_client_node.cpp)
+#target_link_libraries(${PROJECT_NAME}_single_image_client_node ${PROJECT_NAME}_common)
+#ament_target_dependencies(${PROJECT_NAME}_single_image_client_node ${dependencies})
 
 
 #############
@@ -102,8 +103,8 @@ ament_target_dependencies(${PROJECT_NAME}_single_image_client_node ${dependencie
 
 install(TARGETS
   ${PROJECT_NAME}_continuous_node
-  ${PROJECT_NAME}_single_image_server_node
-  ${PROJECT_NAME}_single_image_client_node
+  #${PROJECT_NAME}_single_image_server_node
+  #${PROJECT_NAME}_single_image_client_node
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/
@@ -131,14 +132,14 @@ install(
   INCLUDES DESTINATION include
 )
 
-install(
-  TARGETS ${PROJECT_NAME}_single_image_detector
-  EXPORT ${PROJECT_NAME}_single_image_detectorTargets
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  RUNTIME DESTINATION bin
-  INCLUDES DESTINATION include
-)
+#install(
+#  TARGETS ${PROJECT_NAME}_single_image_detector
+#  EXPORT ${PROJECT_NAME}_single_image_detectorTargets
+#  LIBRARY DESTINATION lib
+#  ARCHIVE DESTINATION lib
+#  RUNTIME DESTINATION bin
+#  INCLUDES DESTINATION include
+#)
 
 ament_export_include_directories(include)
 ament_export_libraries(apriltag_ros)

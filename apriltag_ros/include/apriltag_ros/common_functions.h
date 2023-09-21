@@ -57,7 +57,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/core.hpp>
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 
@@ -90,7 +90,9 @@ class StandaloneTagDescription
   double size() { return size_; }
   int id() { return id_; }
   std::string& frame_name() { return frame_name_; }
-
+  void set_size(double size){size_ = size;}
+  void set_id(double id){id_ = id;}
+  void set_name(double name){frame_name_ = name;}
  private:
   // Tag description
   int id_;
@@ -173,35 +175,34 @@ class TagDetector
   bool remove_duplicates_;
   bool run_quietly_;
   bool publish_tf_;
-  tf::TransformBroadcaster tf_pub_;
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_pub_;
 
  public:
 
-  TagDetector(ros::NodeHandle pnh);
+  TagDetector();
   ~TagDetector();
 
   // Store standalone and bundle tag descriptions
   std::map<int, StandaloneTagDescription> parseStandaloneTags();
-  std::vector<TagBundleDescription > parseTagBundles(
-      XmlRpc::XmlRpcValue& tag_bundles);
-  double xmlRpcGetDouble(
-      XmlRpc::XmlRpcValue& xmlValue, std::string field) const;
-  double xmlRpcGetDoubleWithDefault(
-      XmlRpc::XmlRpcValue& xmlValue, std::string field,
-      double defaultValue) const;
+  std::vector<TagBundleDescription > parseTagBundles();
+//  double xmlRpcGetDouble(
+//     XmlRpc::XmlRpcValue& xmlValue, std::string field) const;
+//  double xmlRpcGetDoubleWithDefault(
+//      XmlRpc::XmlRpcValue& xmlValue, std::string field,
+//      double defaultValue) const;
 
   bool findStandaloneTagDescription(
       int id, StandaloneTagDescription*& descriptionContainer,
       bool printWarning = true);
 
-  geometry_msgs::PoseWithCovarianceStamped makeTagPose(
+  geometry_msgs::msg::PoseWithCovarianceStamped makeTagPose(
       const Eigen::Isometry3d& transform,
-      const std_msgs::Header& header);
+      const std_msgs::msg::Header& header);
 
   // Detect tags in an image
-  AprilTagDetectionArray detectTags(
+  brain_box_msgs::msg::AprilTagDetectionArray detectTags(
       const cv_bridge::CvImagePtr& image,
-      const sensor_msgs::CameraInfoConstPtr& camera_info);
+      const sensor_msgs::msg::CameraInfo& camera_info);
 
   // Get the pose of the tag in the camera frame
   // Returns homogeneous transformation matrix [R,t;[0 0 0 1]] which

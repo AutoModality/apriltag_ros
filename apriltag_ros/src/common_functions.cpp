@@ -30,7 +30,7 @@
  */
 
 #include <apriltag_ros/common_functions.h>
-#include "image_geometry/pinhole_camera_model.h"
+#include <image_geometry/pinhole_camera_model.h>
 
 #include "common/homography.h"
 #include "tagStandard52h13.h"
@@ -57,51 +57,22 @@ TagDetector::TagDetector()
   am::getParam<int>("tag_debug", debug_, 0);
   am::getParam<bool>("publish_tf", publish_tf_, false);
 
-  // Parse standalone tag descriptions specified by user (stored on ROS
-  // parameter server)
-  XmlRpc::XmlRpcValue standalone_tag_descriptions;
-  if(!pnh.getParam("standalone_tags", standalone_tag_descriptions))
+
+
+  if(publish_tf_)
   {
-    ROS_WARN("No april tags specified");
-  }
-  else
-  {
-    try
-    {
-      standalone_tag_descriptions_ =
-          parseStandaloneTags(standalone_tag_descriptions);
-    }
-    catch(XmlRpc::XmlRpcException e)
-    {
-      // in case any of the asserts in parseStandaloneTags() fail
-      ROS_ERROR_STREAM("Error loading standalone tag descriptions: " <<
-                       e.getMessage().c_str());
-    }
+    tf_pub_ = std::make_shared<tf2_ros::TransformBroadcaster>(am::Node::node);
   }
 
-  // parse tag bundle descriptions specified by user (stored on ROS parameter
-  // server)
-  XmlRpc::XmlRpcValue tag_bundle_descriptions;
-  if(!pnh.getParam("tag_bundles", tag_bundle_descriptions))
-  {
-    ROS_WARN("No tag bundles specified");
-  }
-  else
-  {
-    try
-    {
-      tag_bundle_descriptions_ = parseTagBundles(tag_bundle_descriptions);
-    }
-    catch(XmlRpc::XmlRpcException e)
-    {
-      // In case any of the asserts in parseStandaloneTags() fail
-      ROS_ERROR_STREAM("Error loading tag bundle descriptions: " <<
-                       e.getMessage().c_str());
-    }
-  }
+  // Parse standalone tag descriptions specified by user
+  standalone_tag_descriptions_ = parseStandaloneTags();
+
+  // parse tag bundle descriptions specified by user 
+  tag_bundle_descriptions_ = parseTagBundles();
 
   // Optionally remove duplicate detections in scene. Defaults to removing
-  if(!pnh.getParam("remove_duplicates", remove_duplicates_))
+  am::getParam<bool>("remove_duplicates", remove_duplicates_,remove_duplicates_);
+  if(!remove_duplicates_)
   {
     ROS_WARN("remove_duplicates parameter not provided. Defaulting to true");
     remove_duplicates_ = true;
@@ -211,9 +182,9 @@ TagDetector::~TagDetector() {
   }
 }
 
-AprilTagDetectionArray TagDetector::detectTags (
+brain_box_msgs::msg::AprilTagDetectionArray TagDetector::detectTags (
     const cv_bridge::CvImagePtr& image,
-    const sensor_msgs::CameraInfoConstPtr& camera_info) {
+    const sensor_msgs::msg::CameraInfo& camera_info) {
   // Convert image to AprilTag code's format
   cv::Mat gray_image;
   if (image->image.channels() == 1)
@@ -264,7 +235,7 @@ AprilTagDetectionArray TagDetector::detectTags (
 
   // Compute the estimated translation and rotation individually for each
   // detected tag
-  AprilTagDetectionArray tag_detection_array;
+  brain_box_msgs::msg::AprilTagDetectionArray tag_detection_array;
   std::vector<std::string > detection_names;
   tag_detection_array.header = image->header;
   std::map<std::string, std::vector<cv::Point3d > > bundleObjectPoints;
@@ -400,7 +371,7 @@ AprilTagDetectionArray TagDetector::detectTags (
       pose.header = tag_detection_array.detections[i].pose.header;
       tf::Stamped<tf::Transform> tag_transform;
       tf::poseStampedMsgToTF(pose, tag_transform);
-      tf_pub_.sendTransform(tf::StampedTransform(tag_transform,
+      tf_pub_->sendTransform(tf::StampedTransform(tag_transform,
                                                  tag_transform.stamp_,
                                                  image->header.frame_id,
                                                  detection_names[i]));
@@ -523,11 +494,11 @@ Eigen::Isometry3d TagDetector::getRelativeTransform(
   return T;
 }
 
-geometry_msgs::PoseWithCovarianceStamped TagDetector::makeTagPose(
+geometry_msgs::msg::PoseWithCovarianceStamped TagDetector::makeTagPose(
     const Eigen::Isometry3d& transform,
     const std_msgs::Header& header)
 {
-  geometry_msgs::PoseWithCovarianceStamped pose;
+  geometry_msgs::msg::PoseWithCovarianceStamped pose;
   pose.header = header;
   Eigen::Quaterniond rot_quaternion(transform.linear());
   //===== Position and orientation
@@ -621,22 +592,21 @@ std::map<int, StandaloneTagDescription> TagDetector::parseStandaloneTags ()
   {
     std::string param_str = "standalone_tags_" + std::to_string(i);
 
-    StandaloneTagDescription tag_description;
-    tag_description.id_ = -1;
-    am::getParam<int>(param_str+".id", tag_description.id_, tag_description.id_);
-    tag_description.size_ = -1.0;
-    am::getParam<double>(param_str+".size", tag_description.size_, tag_description.size_);
-    tag_description.frame_name_ = "";
-    am::getParam<std::string>(param_str+".name", tag_description.frame_name_, tag_description.frame_name_);
+    int tag_id = -1;
+    am::getParam<int>(param_str+".id", tag_id, tag_id);
+    double tag_size = -1.0;
+    am::getParam<double>(param_str+".size", tag_size, tag_size);
+    std::string tag_name = "";
+    am::getParam<std::string>(param_str+".name", tag_name, tag_name);
 
-    if(tag_description.frame_name_ == "" || tag_description.size_ <= 0.0 || tag_description.id_ < 0)
+    if(tag_name == "" || tag_size <= 0.0 || tag_id < 0)
     {
-      ROS_WARN("Standalone tag with the following configuration is rejected: id:[%d], size:[%f], name:[%f]", tag_description.id_,
-      tag_description.size_, tag_description.frame_name_);
+      ROS_WARN("Standalone tag with the following configuration is rejected: id:[%d], size:[%f], name:[%f]", tag_id, tag_size, tag_name);
       continue;
     }
+    StandaloneTagDescription tag_description(tag_id, tag_size, tag_name);
 
-    descriptions.insert(std::make_pair(tag_description.id_, tag_description));
+    descriptions.insert(std::make_pair(tag_id, tag_description));
   }
   return descriptions;
 }
@@ -665,68 +635,40 @@ std::vector<TagBundleDescription > TagDetector::parseTagBundles ()
     for(int j = 0; j < layout_cnt; j++)
     {
       std::string layout_str = "layout_"+std::to_string(j);
-      
-    }
-
-  }
-
-  ROS_ASSERT(tag_bundles.getType() == XmlRpc::XmlRpcValue::TypeArray);
-
-  // Loop through all tag bundle descritions
-  for (int32_t i=0; i<tag_bundles.size(); i++)
-  {
-    ROS_ASSERT(tag_bundles[i].getType() == XmlRpc::XmlRpcValue::TypeStruct);
-    // i-th tag bundle description
-    XmlRpc::XmlRpcValue& bundle_description = tag_bundles[i];
-
-    std::string bundleName;
-    if (bundle_description.hasMember("name"))
-    {
-      ROS_ASSERT(bundle_description["name"].getType() ==
-                 XmlRpc::XmlRpcValue::TypeString);
-      bundleName = (std::string)bundle_description["name"];
-    }
-    else
-    {
-      std::stringstream bundle_name_stream;
-      bundle_name_stream << "bundle_" << i;
-      bundleName = bundle_name_stream.str();
-    }
-    TagBundleDescription bundle_i(bundleName);
-    ROS_INFO("Loading tag bundle '%s'",bundle_i.name().c_str());
-
-    ROS_ASSERT(bundle_description["layout"].getType() ==
-               XmlRpc::XmlRpcValue::TypeArray);
-    XmlRpc::XmlRpcValue& member_tags = bundle_description["layout"];
-
-    // Loop through each member tag of the bundle
-    for (int32_t j=0; j<member_tags.size(); j++)
-    {
-      ROS_ASSERT(member_tags[j].getType() == XmlRpc::XmlRpcValue::TypeStruct);
-      XmlRpc::XmlRpcValue& tag = member_tags[j];
-
-      ROS_ASSERT(tag["id"].getType() == XmlRpc::XmlRpcValue::TypeInt);
-      int id = tag["id"];
-
-      ROS_ASSERT(tag["size"].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-      double size = tag["size"];
-
-      // Make sure that if this tag was specified also as standalone,
-      // then the sizes match
-      StandaloneTagDescription* standaloneDescription;
-      if (findStandaloneTagDescription(id, standaloneDescription, false))
+      std::string param_str_2 = std::string(param_str + std::string(".")+ layout_cnt)
+      int tag_id = -1;
+      am::getParam<int>(param_str_2 + ".id", tag_id, tag_id);
+      if(tag_id < 0)
       {
-        ROS_ASSERT(size == standaloneDescription->size());
+        ROS_INFO("Tag id [%d] for %s is invalid", tag_id, param_str_2.c_str());  
+        continue;
       }
 
+      double tag_size = -1.0;
+      am::getParam<int>(param_str_2 + ".size", tag_size, tag_size);
+      if(tag_size < 0.0)
+      {
+        ROS_INFO("Tag size [%f] for %s is invalid", tag_size, param_str_2.c_str());  
+        continue;
+      }    
+      
+
       // Get this tag's pose with respect to the bundle origin
-      double x  = xmlRpcGetDoubleWithDefault(tag, "x", 0.);
-      double y  = xmlRpcGetDoubleWithDefault(tag, "y", 0.);
-      double z  = xmlRpcGetDoubleWithDefault(tag, "z", 0.);
-      double qw = xmlRpcGetDoubleWithDefault(tag, "qw", 1.);
-      double qx = xmlRpcGetDoubleWithDefault(tag, "qx", 0.);
-      double qy = xmlRpcGetDoubleWithDefault(tag, "qy", 0.);
-      double qz = xmlRpcGetDoubleWithDefault(tag, "qz", 0.);
+      double x  = 0.0;
+      am::getParam<double>(param_str_2 + ".x", x, x);
+      double y  = 0.0;
+      am::getParam<double>(param_str_2 + ".y", y, y);
+      double z  = 0.0;
+      am::getParam<double>(param_str_2 + ".z", z, z);
+      double qw = 1.0;
+      am::getParam<double>(param_str_2 + ".qw", qw, qw);
+      double qx = 0.0;
+      am::getParam<double>(param_str_2 + ".qx", qx, qx);
+      double qy = 0.0;
+      am::getParam<double>(param_str_2 + ".qy", qy, qy);
+      double qz = 0.0;
+      am::getParam<double>(param_str_2 + ".qz", qz, qz);
+
       Eigen::Quaterniond q_tag(qw, qx, qy, qz);
       q_tag.normalize();
       Eigen::Matrix3d R_oi = q_tag.toRotationMatrix();
@@ -738,14 +680,17 @@ std::vector<TagBundleDescription > TagDetector::parseTagBundles ()
                        0,         0,         0,         1);
 
       // Register the tag member
-      bundle_i.addMemberTag(id, size, T_mj);
-      ROS_INFO_STREAM(" " << j << ") id: " << id << ", size: " << size << ", "
-                          << "p = [" << x << "," << y << "," << z << "], "
-                          << "q = [" << qw << "," << qx << "," << qy << ","
-                          << qz << "]");
+      tbd.addMemberTag(id, size, T_mj);
+
+      ROS_INFO("TAG Bundle [%s]: TAG[%d, %f] Pose[%f,%f,%f], Orientation[%f,%f,%f,%f]", tbd.name().c_str(), tag_id, tag_size, x,
+      y, z, qx, qy, qz, qw);
+
     }
-    descriptions.push_back(bundle_i);
+
+    descriptions.push_back(tbd);
+
   }
+
   return descriptions;
 }
 

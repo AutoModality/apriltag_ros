@@ -9,7 +9,7 @@ tag_refine_edges:  1          # default: 1
 tag_debug:         0          # default: 0
 max_hamming_dist:  2          # default: 2 (Tunable parameter with 2 being a good choice - values >=3 consume large amounts of memory. Choose the largest value possible.)
 # Other parameters
-publish_tf:        true       # default: false
+publish_tf:        false       # default: false
 transport_hint:    "raw"      # default: raw, see http://wiki.ros.org/image_transport#Known_Transport_Packages for options
 
 # # Definitions of tags to detect
@@ -28,12 +28,14 @@ transport_hint:    "raw"      # default: raw, see http://wiki.ros.org/image_tran
 #
 # ### Syntax
 #
+# ROS 1 PARAM
 # standalone_tags:
 #   [
 #     {id: ID, size: SIZE, name: NAME},
 #     ...
 #   ]
 
+#ROS 2 PARAM
 standalone_tags_num: 0
 #standalone_tags_X:
 #  id: ID
@@ -53,6 +55,7 @@ standalone_tags_num: 0
 # ### Syntax
 #
 tag_bundles_num: 0
+#ROS 2 PARAM
 #tag_bundles_X:
 #  name: 'CUSTOM_BUNDLE_NAME'
 #  layout_num: 0
@@ -67,7 +70,7 @@ tag_bundles_num: 0
 #    qz: QUAT_Z_VAL
 #    qw: QUAT_W_VAL
 
-
+#ROS 1 PARAM
 # tag_bundles:
 #   [
 #     {
@@ -80,6 +83,3 @@ tag_bundles_num: 0
 #     },
 #     ...
 #   ]
-tag_bundles:
-  [
-  ]
