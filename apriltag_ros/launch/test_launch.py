@@ -28,7 +28,31 @@ def generate_launch_description():
         executable = 'apriltag_ros_continuous_node',
         parameters = [config],
         remappings = [
-                ('/image_rect',image_topic),
+                ('/image_rec',image_topic),
+                ('/camera_info', caminfo_topic)
+            ],
+        emulate_tty=True,
+    )
+
+    usb_cam_node=Node(
+        package = 'usb_cam',
+        name = 'usb_cam_node_exe',
+        executable = 'usb_cam_node_exe',
+        parameters = [config],
+        remappings = [
+                ('/image_raw',image_topic),
+                ('/camera_info', caminfo_topic)
+            ],
+        emulate_tty=True,
+    )
+
+    image_view_node=Node(
+        package = 'image_view',
+        name = 'image_view',
+        executable = 'image_view',
+        parameters = [config],
+        remappings = [
+                ('/image',image_topic),
                 ('/camera_info', caminfo_topic)
             ],
         emulate_tty=True,
@@ -36,4 +60,6 @@ def generate_launch_description():
     ld.add_action(apriltag_ros_node)
     ld.add_action(image_topic_arg)
     ld.add_action(caminfo_topic_arg)
+    ld.add_action(usb_cam_node)
+    #ld.add_action(image_view_node)
     return ld

@@ -1,5 +1,7 @@
 apriltag_ros:
   ros__parameters:
+
+    publish_tag_detections_image: true
     # AprilTag 3 code parameters
     # Find descriptions in apriltag/include/apriltag.h:struct apriltag_detector
     #                      apriltag/include/apriltag.h:struct apriltag_family

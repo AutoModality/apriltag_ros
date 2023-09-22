@@ -64,6 +64,9 @@ void ContinuousDetector::camInfoCB(const sensor_msgs::msg::CameraInfo::Ptr msg)
 void ContinuousDetector::imageCB (const sensor_msgs::msg::Image::ConstSharedPtr image_rect)
 {
   std::scoped_lock<std::mutex> lock(detection_mutex_);
+
+  //ROS_INFO("image encoding: %s", image_rect->encoding.c_str());
+
   // Lazy updates:
   // When there are no subscribers _and_ when tf is not published,
   // skip detection.
@@ -79,7 +82,7 @@ void ContinuousDetector::imageCB (const sensor_msgs::msg::Image::ConstSharedPtr 
   // AprilTag 2 on the iamge
   try
   {
-    cv_image_ = cv_bridge::toCvCopy(image_rect, image_rect->encoding);
+    cv_image_ = cv_bridge::toCvCopy(image_rect, "mono8");
   }
   catch (cv_bridge::Exception& e)
   {

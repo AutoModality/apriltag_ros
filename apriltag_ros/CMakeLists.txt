@@ -75,11 +75,11 @@ target_link_libraries(${PROJECT_NAME}_common ${OpenCV_LIBRARIES} apriltag::april
 ament_target_dependencies(${PROJECT_NAME}_common ${dependencies})
 
 add_library(${PROJECT_NAME}_continuous_detector src/continuous_detector.cpp)
-target_link_libraries(${PROJECT_NAME}_continuous_detector ${PROJECT_NAME}_common ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_continuous_detector ${PROJECT_NAME}_common)
 ament_target_dependencies(${PROJECT_NAME}_continuous_detector ${dependencies})
 
 #add_library(${PROJECT_NAME}_single_image_detector src/single_image_detector.cpp)
-#target_link_libraries(${PROJECT_NAME}_single_image_detector ${PROJECT_NAME}_common ${catkin_LIBRARIES})
+#target_link_libraries(${PROJECT_NAME}_single_image_detector ${PROJECT_NAME}_common)
 #ament_target_dependencies(${PROJECT_NAME}_single_image_detector ${dependencies})
 
 
