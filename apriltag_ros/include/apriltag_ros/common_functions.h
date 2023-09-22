@@ -60,6 +60,10 @@
 #include <image_transport/image_transport.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <tf2_ros/transform_broadcaster.h>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Transform.h>
+#include <tf2/convert.h>
 
 #include <apriltag.h>
 

@@ -43,44 +43,44 @@
 #ifndef APRILTAG_ROS_CONTINUOUS_DETECTOR_H
 #define APRILTAG_ROS_CONTINUOUS_DETECTOR_H
 
-#include "apriltag_ros/common_functions.h"
-
+#include <apriltag_ros/common_functions.h>
+#include <am_utils/am_ros2_utility.h>
+#include <brain_box_msgs/msg/april_tag_detection_array.hpp>
 #include <memory>
 #include <mutex>
-
-#include <nodelet/nodelet.h>
-#include <ros/service_server.h>
-#include <std_srvs/Empty.h>
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
 
 namespace apriltag_ros
 {
 
-class ContinuousDetector: public nodelet::Nodelet
+class ContinuousDetector
 {
  public:
-  ContinuousDetector() = default;
-  ~ContinuousDetector() = default;
+  ContinuousDetector();
+  ~ContinuousDetector()
+  {
 
-  void onInit();
+  }
 
-  void imageCallback(const sensor_msgs::ImageConstPtr& image_rect,
-                     const sensor_msgs::CameraInfoConstPtr& camera_info);
-
-  void refreshTagParameters();
-
+  
  private:
   std::mutex detection_mutex_;
   std::shared_ptr<TagDetector> tag_detector_;
-  bool draw_tag_detections_image_;
+  bool draw_tag_detections_image_ {false};
   cv_bridge::CvImagePtr cv_image_;
+  sensor_msgs::msg::CameraInfo camera_info_;
+  std::string image_topic_ = "/image_rect";
+  std::string caminfo_topic_ = "/camera_info";
 
-  std::shared_ptr<image_transport::ImageTransport> it_;
-  image_transport::CameraSubscriber camera_image_subscriber_;
+  image_transport::ImageTransport it_;
+  image_transport::Subscriber image_sub_;
   image_transport::Publisher tag_detections_image_publisher_;
-  ros::Publisher tag_detections_publisher_;
+  rclcpp::Publisher<brain_box_msgs::msg::AprilTagDetectionArray>::SharedPtr tag_detections_publisher_;
+  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr caminfo_sub_;
 
-  ros::ServiceServer refresh_params_service_;
-  bool refreshParamsCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  void imageCB(const sensor_msgs::msg::Image::ConstSharedPtr image_rect);
+  void camInfoCB(const sensor_msgs::msg::CameraInfo::Ptr cam_info_msg);
 };
 
 } // namespace apriltag_ros

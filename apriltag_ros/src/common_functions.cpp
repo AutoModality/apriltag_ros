@@ -31,6 +31,7 @@
 
 #include <apriltag_ros/common_functions.h>
 #include <image_geometry/pinhole_camera_model.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "common/homography.h"
 #include "tagStandard52h13.h"
@@ -210,7 +211,7 @@ brain_box_msgs::msg::AprilTagDetectionArray TagDetector::detectTags (
   double cx = camera_model.cx(); // optical center x-coordinate [px]
   double cy = camera_model.cy(); // optical center y-coordinate [px]
 
-  ROS_INFO_STREAM_ONCE("Camera model: fx = " << fx << ", fy = " << fy << ", cx = " << cx << ", cy = " << cy);
+  ROS_INFO_STREAM("Camera model: fx = " << fx << ", fy = " << fy << ", cx = " << cx << ", cy = " << cy);
 
   // Check if camera intrinsics are not available - if not the calculated
   // transforms are meaningless.
@@ -317,11 +318,11 @@ brain_box_msgs::msg::AprilTagDetectionArray TagDetector::detectTags (
     Eigen::Isometry3d transform = getRelativeTransform(standaloneTagObjectPoints,
                                                      standaloneTagImagePoints,
                                                      fx, fy, cx, cy);
-    geometry_msgs::PoseWithCovarianceStamped tag_pose =
+    geometry_msgs::msg::PoseWithCovarianceStamped tag_pose =
         makeTagPose(transform, image->header);
 
     // Add the detection to the back of the tag detection array
-    AprilTagDetection tag_detection;
+    brain_box_msgs::msg::AprilTagDetection tag_detection;
     tag_detection.pose = tag_pose;
     tag_detection.id.push_back(detection->id);
     tag_detection.size.push_back(tag_size);
@@ -350,11 +351,11 @@ brain_box_msgs::msg::AprilTagDetectionArray TagDetector::detectTags (
       Eigen::Isometry3d transform =
           getRelativeTransform(bundleObjectPoints[bundleName],
                                bundleImagePoints[bundleName], fx, fy, cx, cy);
-      geometry_msgs::PoseWithCovarianceStamped bundle_pose =
+      geometry_msgs::msg::PoseWithCovarianceStamped bundle_pose =
           makeTagPose(transform, image->header);
 
       // Add the detection to the back of the tag detection array
-      AprilTagDetection tag_detection;
+      brain_box_msgs::msg::AprilTagDetection tag_detection;
       tag_detection.pose = bundle_pose;
       tag_detection.id = bundle.bundleIds();
       tag_detection.size = bundle.bundleSizes();
@@ -364,19 +365,19 @@ brain_box_msgs::msg::AprilTagDetectionArray TagDetector::detectTags (
   }
 
   // If set, publish the transform /tf topic
-  if (publish_tf_) {
+  /*if (publish_tf_) {
     for (unsigned int i=0; i<tag_detection_array.detections.size(); i++) {
-      geometry_msgs::PoseStamped pose;
+      geometry_msgs::msg::PoseStamped pose;
       pose.pose = tag_detection_array.detections[i].pose.pose.pose;
       pose.header = tag_detection_array.detections[i].pose.header;
-      tf::Stamped<tf::Transform> tag_transform;
-      tf::poseStampedMsgToTF(pose, tag_transform);
-      tf_pub_->sendTransform(tf::StampedTransform(tag_transform,
+      tf2::Stamped<tf2::Transform> tag_transform;
+      //tf2::poseStampedMsgToTF(pose, tag_transform);
+      tf_pub_->sendTransform(tf2::StampedTransform(tag_transform,
                                                  tag_transform.stamp_,
                                                  image->header.frame_id,
                                                  detection_names[i]));
     }
-  }
+  }*/
 
   return tag_detection_array;
 }
@@ -496,7 +497,7 @@ Eigen::Isometry3d TagDetector::getRelativeTransform(
 
 geometry_msgs::msg::PoseWithCovarianceStamped TagDetector::makeTagPose(
     const Eigen::Isometry3d& transform,
-    const std_msgs::Header& header)
+    const std_msgs::msg::Header& header)
 {
   geometry_msgs::msg::PoseWithCovarianceStamped pose;
   pose.header = header;
@@ -512,7 +513,7 @@ geometry_msgs::msg::PoseWithCovarianceStamped TagDetector::makeTagPose(
   return pose;
 }
 
-void TagDetector::drawDetections (cv_bridge::CvImagePtr image)
+void TagDetector::drawDetections(cv_bridge::CvImagePtr image)
 {
   for (int i = 0; i < zarray_size(detections_); i++)
   {
@@ -635,7 +636,7 @@ std::vector<TagBundleDescription > TagDetector::parseTagBundles ()
     for(int j = 0; j < layout_cnt; j++)
     {
       std::string layout_str = "layout_"+std::to_string(j);
-      std::string param_str_2 = std::string(param_str + std::string(".")+ layout_cnt)
+      std::string param_str_2 = std::string(param_str + std::string(".") + layout_str);
       int tag_id = -1;
       am::getParam<int>(param_str_2 + ".id", tag_id, tag_id);
       if(tag_id < 0)
@@ -645,7 +646,7 @@ std::vector<TagBundleDescription > TagDetector::parseTagBundles ()
       }
 
       double tag_size = -1.0;
-      am::getParam<int>(param_str_2 + ".size", tag_size, tag_size);
+      am::getParam<double>(param_str_2 + ".size", tag_size, tag_size);
       if(tag_size < 0.0)
       {
         ROS_INFO("Tag size [%f] for %s is invalid", tag_size, param_str_2.c_str());  
@@ -680,7 +681,7 @@ std::vector<TagBundleDescription > TagDetector::parseTagBundles ()
                        0,         0,         0,         1);
 
       // Register the tag member
-      tbd.addMemberTag(id, size, T_mj);
+      tbd.addMemberTag(tag_id, tag_size, T_mj);
 
       ROS_INFO("TAG Bundle [%s]: TAG[%d, %f] Pose[%f,%f,%f], Orientation[%f,%f,%f,%f]", tbd.name().c_str(), tag_id, tag_size, x,
       y, z, qx, qy, qz, qw);
@@ -694,7 +695,7 @@ std::vector<TagBundleDescription > TagDetector::parseTagBundles ()
   return descriptions;
 }
 
-double TagDetector::xmlRpcGetDouble (XmlRpc::XmlRpcValue& xmlValue,
+/*double TagDetector::xmlRpcGetDouble (XmlRpc::XmlRpcValue& xmlValue,
                                      std::string field) const
 {
   ROS_ASSERT((xmlValue[field].getType() == XmlRpc::XmlRpcValue::TypeDouble) ||
@@ -732,7 +733,7 @@ double TagDetector::xmlRpcGetDoubleWithDefault (XmlRpc::XmlRpcValue& xmlValue,
   {
     return defaultValue;
   }
-}
+}*/
 
 bool TagDetector::findStandaloneTagDescription (
     int id, StandaloneTagDescription*& descriptionContainer, bool printWarning)

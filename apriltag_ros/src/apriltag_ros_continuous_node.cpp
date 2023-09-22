@@ -29,22 +29,24 @@
  * Technology.
  */
 
-#include <ros/ros.h>
+#include <am_utils/am_ros2_utility.h>
+#include <apriltag_ros/continuous_detector.h>
 
-#include <nodelet/loader.h>
 
+std::shared_ptr<am::AMLifeCycle> am::Node::node;
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "apriltag_ros");
+  rclcpp::init(argc, argv);
 
-  nodelet::Loader nodelet;
-  nodelet::M_string remap(ros::names::getRemappings());
-  nodelet::V_string nargv;
+  am::Node::node = std::make_shared<am::AMLifeCycle>("apriltag_ros");
 
-  nodelet.load(ros::this_node::getName(),
-              "apriltag_ros/ContinuousDetector",
-              remap, nargv);
+  std::shared_ptr<apriltag_ros::ContinuousDetector> node = std::make_shared<apriltag_ros::ContinuousDetector>();
 
-  ros::spin();
-  return 0;
+	ROS_INFO_STREAM(am::Node::node->get_name() << ": running...");
+
+	rclcpp::spin(am::Node::node);
+
+	rclcpp::shutdown();
+
+	return 0;
 }
