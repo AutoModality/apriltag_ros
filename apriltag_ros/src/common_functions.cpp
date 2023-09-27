@@ -326,6 +326,7 @@ brain_box_msgs::msg::AprilTagDetectionArray TagDetector::detectTags (
     tag_detection.pose = tag_pose;
     tag_detection.id.push_back(detection->id);
     tag_detection.size.push_back(tag_size);
+    tag_detection.name = std::to_string(detection->id);
     tag_detection_array.detections.push_back(tag_detection);
     detection_names.push_back(standaloneDescription->frame_name());
   }
@@ -358,6 +359,7 @@ brain_box_msgs::msg::AprilTagDetectionArray TagDetector::detectTags (
       brain_box_msgs::msg::AprilTagDetection tag_detection;
       tag_detection.pose = bundle_pose;
       tag_detection.id = bundle.bundleIds();
+      tag_detection.name = bundle.name();
       tag_detection.size = bundle.bundleSizes();
       tag_detection_array.detections.push_back(tag_detection);
       detection_names.push_back(bundle.name());
@@ -378,6 +380,8 @@ brain_box_msgs::msg::AprilTagDetectionArray TagDetector::detectTags (
                                                  detection_names[i]));
     }
   }*/
+
+  tag_detection_array.family = family_;
 
   return tag_detection_array;
 }
