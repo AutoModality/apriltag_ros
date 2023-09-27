@@ -146,6 +146,7 @@ install(
 #)
 
 ament_export_include_directories(include)
-ament_export_libraries(apriltag_ros)
+ament_export_libraries(${PROJECT_NAME}_common)
+ament_export_libraries(${PROJECT_NAME}_continuous_detector)
 ament_export_dependencies(${dependencies})
 ament_package()
