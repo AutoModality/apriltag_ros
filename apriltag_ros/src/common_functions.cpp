@@ -211,7 +211,7 @@ brain_box_msgs::msg::AprilTagDetectionArray TagDetector::detectTags (
   double cx = camera_model.cx(); // optical center x-coordinate [px]
   double cy = camera_model.cy(); // optical center y-coordinate [px]
 
-  ROS_INFO_STREAM("Camera model: fx = " << fx << ", fy = " << fy << ", cx = " << cx << ", cy = " << cy);
+  //ROS_INFO_STREAM("Camera model: fx = " << fx << ", fy = " << fy << ", cx = " << cx << ", cy = " << cy);
 
   // Check if camera intrinsics are not available - if not the calculated
   // transforms are meaningless.
