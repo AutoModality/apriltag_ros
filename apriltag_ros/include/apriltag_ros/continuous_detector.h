@@ -65,6 +65,8 @@ class ContinuousDetector
 
   
  private:
+
+  int frames_per_second_ = 5;
   std::mutex detection_mutex_;
   std::shared_ptr<TagDetector> tag_detector_;
   bool draw_tag_detections_image_ {false};
@@ -72,6 +74,10 @@ class ContinuousDetector
   sensor_msgs::msg::CameraInfo camera_info_;
   std::string image_topic_ = "/image_rect";
   std::string caminfo_topic_ = "/camera_info";
+
+  rclcpp::TimerBase::SharedPtr enable_timer_;
+  void enableTimerCB();
+  bool enabled_ {false};
 
   image_transport::ImageTransport it_;
   image_transport::Subscriber image_sub_;

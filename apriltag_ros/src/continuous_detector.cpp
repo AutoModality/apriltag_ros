@@ -41,19 +41,24 @@ ContinuousDetector::ContinuousDetector() :  it_(am::Node::node)
   tag_detector_ = std::make_shared<TagDetector>();
   
   am::getParam<bool>("publish_tag_detections_image", draw_tag_detections_image_, draw_tag_detections_image_);
+  am::getParam<int>("frames_per_second", frames_per_second_, frames_per_second_);
 
+  enable_timer_ = am::Node::node->create_wall_timer(am::toDuration(1.0/(double)(frames_per_second_)), std::bind(&ContinuousDetector::enableTimerCB, this));
 
-  
   tag_detections_publisher_ = am::Node::node->create_publisher<brain_box_msgs::msg::AprilTagDetectionArray>("/tag_detections", 1);
   if (draw_tag_detections_image_)
   {
     tag_detections_image_publisher_ = it_.advertise("tag_detections_image", 1);
   }
 
-
   image_sub_ = it_.subscribe(image_topic_, 1, std::bind(&ContinuousDetector::imageCB, this, std::placeholders::_1));
   caminfo_sub_ = am::Node::node->create_subscription<sensor_msgs::msg::CameraInfo>(caminfo_topic_, 1, std::bind(&ContinuousDetector::camInfoCB, this, std::placeholders::_1));
 
+}
+
+void ContinuousDetector::enableTimerCB()
+{
+  enabled_ = true;
 }
 
 void ContinuousDetector::camInfoCB(const sensor_msgs::msg::CameraInfo::Ptr msg)
@@ -61,9 +66,15 @@ void ContinuousDetector::camInfoCB(const sensor_msgs::msg::CameraInfo::Ptr msg)
   camera_info_ = *msg;
 }
 
-void ContinuousDetector::imageCB (const sensor_msgs::msg::Image::ConstSharedPtr image_rect)
+void ContinuousDetector::imageCB(const sensor_msgs::msg::Image::ConstSharedPtr image_rect)
 {
-  std::scoped_lock<std::mutex> lock(detection_mutex_);
+  if(!enabled_)
+  {
+    return;
+  }
+  enabled_ = false;
+
+  //std::scoped_lock<std::mutex> lock(detection_mutex_);
 
   //ROS_INFO("image encoding: %s", image_rect->encoding.c_str());
 
@@ -100,6 +111,8 @@ void ContinuousDetector::imageCB (const sensor_msgs::msg::Image::ConstSharedPtr 
     tag_detector_->drawDetections(cv_image_);
     tag_detections_image_publisher_.publish(cv_image_->toImageMsg());
   }
+
+  
 }
 
 } // namespace apriltag_ros
