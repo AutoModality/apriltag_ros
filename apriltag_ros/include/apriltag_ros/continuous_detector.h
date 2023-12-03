@@ -54,6 +54,16 @@
 namespace apriltag_ros
 {
 
+struct CameraSensor
+{
+  std::string image_topic;
+  std::string camera_info_topic;
+  sensor_msgs::msg::CameraInfo camera_info_;
+  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_sub;
+  image_transport::Subscriber image_sub;
+
+};
+
 class ContinuousDetector
 {
  public:
@@ -67,26 +77,24 @@ class ContinuousDetector
  private:
 
   int frames_per_second_ = 5;
+  int camera_cnt_ = 0;
   std::mutex detection_mutex_;
   std::shared_ptr<TagDetector> tag_detector_;
   bool draw_tag_detections_image_ {false};
   cv_bridge::CvImagePtr cv_image_;
-  sensor_msgs::msg::CameraInfo camera_info_;
-  std::string image_topic_ = "/image_rect";
-  std::string caminfo_topic_ = "/camera_info";
 
+  std::vector<CameraSensor> cameras_;
   rclcpp::TimerBase::SharedPtr enable_timer_;
   void enableTimerCB();
   bool enabled_ {false};
 
   image_transport::ImageTransport it_;
-  image_transport::Subscriber image_sub_;
   image_transport::Publisher tag_detections_image_publisher_;
   rclcpp::Publisher<brain_box_msgs::msg::AprilTagDetectionArray>::SharedPtr tag_detections_publisher_;
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr caminfo_sub_;
 
-  void imageCB(const sensor_msgs::msg::Image::ConstSharedPtr image_rect);
-  void camInfoCB(const sensor_msgs::msg::CameraInfo::Ptr cam_info_msg);
+  void imageCB(const sensor_msgs::msg::Image::ConstSharedPtr image_rect, int camera_id);
+  void camInfoCB(const sensor_msgs::msg::CameraInfo::Ptr cam_info_msg, int camera_id);
 };
 
 } // namespace apriltag_ros

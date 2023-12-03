@@ -42,7 +42,13 @@ ContinuousDetector::ContinuousDetector() :  it_(am::Node::node)
   
   am::getParam<bool>("publish_tag_detections_image", draw_tag_detections_image_, draw_tag_detections_image_);
   am::getParam<int>("frames_per_second", frames_per_second_, frames_per_second_);
-
+  am::getParam<int>("camera_cnt", camera_cnt_, camera_cnt_);
+  if(camera_cnt_ < 1)
+  {
+    ROS_ERROR("##################No camera is defined##################");
+    return;
+  }
+  
   enable_timer_ = am::Node::node->create_wall_timer(am::toDuration(1.0/(double)(frames_per_second_)), std::bind(&ContinuousDetector::enableTimerCB, this));
 
   tag_detections_publisher_ = am::Node::node->create_publisher<brain_box_msgs::msg::AprilTagDetectionArray>("/tag_detections", 1);
@@ -51,9 +57,22 @@ ContinuousDetector::ContinuousDetector() :  it_(am::Node::node)
     tag_detections_image_publisher_ = it_.advertise("tag_detections_image", 1);
   }
 
-  image_sub_ = it_.subscribe(image_topic_, 1, std::bind(&ContinuousDetector::imageCB, this, std::placeholders::_1));
-  caminfo_sub_ = am::Node::node->create_subscription<sensor_msgs::msg::CameraInfo>(caminfo_topic_, 1, std::bind(&ContinuousDetector::camInfoCB, this, std::placeholders::_1));
+  //image_sub_ = it_.subscribe(image_topic_, 1, std::bind(&ContinuousDetector::imageCB, this, std::placeholders::_1));
+  //caminfo_sub_ = am::Node::node->create_subscription<sensor_msgs::msg::CameraInfo>(caminfo_topic_, 1, std::bind(&ContinuousDetector::camInfoCB, this, std::placeholders::_1));
+  cameras_.resize(camera_cnt_);
+  for(int i = 0; i < camera_cnt_; i++)
+  {
+    std::string camera_param_string = "camera_" + std::to_string(i);
+    CameraSensor camera;
 
+    am::getParam<std::string>(camera_param_string + ".camera_info_topic", camera.camera_info_topic, camera.camera_info_topic);
+    am::getParam<std::string>(camera_param_string + ".image_topic", camera.image_topic, camera.image_topic);
+
+    std::function<void(std::shared_ptr<sensor_msgs::msg::CameraInfo>)> fnc = std::bind(&ContinuousDetector::camInfoCB, this, std::placeholders::_1, i);
+		camera.camera_info_sub = am::Node::node->create_subscription<sensor_msgs::msg::CameraInfo>(camera.camera_info_topic, 1, fnc);
+    camera.image_sub = it_.subscribe(camera.image_topic, 30, std::bind(&ContinuousDetector::imageCB, this, std::placeholders::_1, i));
+    cameras_[i] = camera;
+  }
 }
 
 void ContinuousDetector::enableTimerCB()
@@ -61,12 +80,17 @@ void ContinuousDetector::enableTimerCB()
   enabled_ = true;
 }
 
-void ContinuousDetector::camInfoCB(const sensor_msgs::msg::CameraInfo::Ptr msg)
+void ContinuousDetector::camInfoCB(const sensor_msgs::msg::CameraInfo::Ptr msg, int camera_id)
 {
-  camera_info_ = *msg;
+  if(camera_id >= cameras_.size() || camera_id < 0)
+  {
+    return;
+  }
+
+  cameras_[camera_id].camera_info_ = *msg;
 }
 
-void ContinuousDetector::imageCB(const sensor_msgs::msg::Image::ConstSharedPtr image_rect)
+void ContinuousDetector::imageCB(const sensor_msgs::msg::Image::ConstSharedPtr image_rect, int camera_id)
 {
   if(!enabled_)
   {
@@ -102,7 +126,7 @@ void ContinuousDetector::imageCB(const sensor_msgs::msg::Image::ConstSharedPtr i
   }
 
   // Publish detected tags in the image by AprilTag 2
-  tag_detections_publisher_->publish(tag_detector_->detectTags(cv_image_,camera_info_));
+  tag_detections_publisher_->publish(tag_detector_->detectTags(cv_image_,cameras_[camera_id].camera_info_));
 
   // Publish the camera image overlaid by outlines of the detected tags and
   // their payload values
