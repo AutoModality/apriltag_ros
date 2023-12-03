@@ -58,10 +58,22 @@ struct CameraSensor
 {
   std::string image_topic;
   std::string camera_info_topic;
+  int frames_per_second {10};
+  bool enabled {false};
   sensor_msgs::msg::CameraInfo camera_info_;
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_sub;
   image_transport::Subscriber image_sub;
+  rclcpp::TimerBase::SharedPtr enable_timer;
 
+  void setupTimer()
+  {
+    enable_timer = am::Node::node->create_wall_timer(am::toDuration(1.0/(double)(frames_per_second)), std::bind(&CameraSensor::timerCB, this));
+  }
+
+  void timerCB()
+  {
+    enabled = true;
+  }
 };
 
 class ContinuousDetector

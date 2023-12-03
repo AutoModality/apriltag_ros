@@ -41,7 +41,6 @@ ContinuousDetector::ContinuousDetector() :  it_(am::Node::node)
   tag_detector_ = std::make_shared<TagDetector>();
   
   am::getParam<bool>("publish_tag_detections_image", draw_tag_detections_image_, draw_tag_detections_image_);
-  am::getParam<int>("frames_per_second", frames_per_second_, frames_per_second_);
   am::getParam<int>("camera_cnt", camera_cnt_, camera_cnt_);
   if(camera_cnt_ < 1)
   {
@@ -49,7 +48,6 @@ ContinuousDetector::ContinuousDetector() :  it_(am::Node::node)
     return;
   }
   
-  enable_timer_ = am::Node::node->create_wall_timer(am::toDuration(1.0/(double)(frames_per_second_)), std::bind(&ContinuousDetector::enableTimerCB, this));
 
   tag_detections_publisher_ = am::Node::node->create_publisher<brain_box_msgs::msg::AprilTagDetectionArray>("/tag_detections", 1);
   if (draw_tag_detections_image_)
@@ -57,8 +55,6 @@ ContinuousDetector::ContinuousDetector() :  it_(am::Node::node)
     tag_detections_image_publisher_ = it_.advertise("tag_detections_image", 1);
   }
 
-  //image_sub_ = it_.subscribe(image_topic_, 1, std::bind(&ContinuousDetector::imageCB, this, std::placeholders::_1));
-  //caminfo_sub_ = am::Node::node->create_subscription<sensor_msgs::msg::CameraInfo>(caminfo_topic_, 1, std::bind(&ContinuousDetector::camInfoCB, this, std::placeholders::_1));
   cameras_.resize(camera_cnt_);
   for(int i = 0; i < camera_cnt_; i++)
   {
@@ -67,10 +63,14 @@ ContinuousDetector::ContinuousDetector() :  it_(am::Node::node)
 
     am::getParam<std::string>(camera_param_string + ".camera_info_topic", camera.camera_info_topic, camera.camera_info_topic);
     am::getParam<std::string>(camera_param_string + ".image_topic", camera.image_topic, camera.image_topic);
-
+    am::getParam<int>(camera_param_string+".frames_per_second", camera.frames_per_second, camera.frames_per_second);
+    
     std::function<void(std::shared_ptr<sensor_msgs::msg::CameraInfo>)> fnc = std::bind(&ContinuousDetector::camInfoCB, this, std::placeholders::_1, i);
 		camera.camera_info_sub = am::Node::node->create_subscription<sensor_msgs::msg::CameraInfo>(camera.camera_info_topic, 1, fnc);
     camera.image_sub = it_.subscribe(camera.image_topic, 30, std::bind(&ContinuousDetector::imageCB, this, std::placeholders::_1, i));
+
+    camera.setupTimer();
+
     cameras_[i] = camera;
   }
 }
@@ -92,11 +92,11 @@ void ContinuousDetector::camInfoCB(const sensor_msgs::msg::CameraInfo::Ptr msg, 
 
 void ContinuousDetector::imageCB(const sensor_msgs::msg::Image::ConstSharedPtr image_rect, int camera_id)
 {
-  if(!enabled_)
+  if(!cameras_[camera_id].enabled)
   {
     return;
   }
-  enabled_ = false;
+  cameras_[camera_id].enabled = false;
 
   //std::scoped_lock<std::mutex> lock(detection_mutex_);
 
