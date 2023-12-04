@@ -73,6 +73,8 @@ ContinuousDetector::ContinuousDetector() :  it_(am::Node::node)
 
     camera.setupTimer();
 
+    camera.print();
+
     cameras_[i] = camera;
   }
 }

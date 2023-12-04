@@ -70,6 +70,12 @@ struct CameraSensor
   image_transport::Subscriber image_sub;
   rclcpp::TimerBase::SharedPtr enable_timer;
 
+  void print()
+  {
+    ROS_INFO(GREEN "image_topic: %s, camera_info_topic: %s, tag_detection_topic: %s, tag_detection_image_topic: %s, frames_per_second: %d" COLOR_RESET, image_topic.c_str(), 
+    camera_info_topic.c_str(), tag_detection_topic.c_str(), tag_detection_image_topic.c_str(), frames_per_second);
+  }
+
   void setupTimer()
   {
     enable_timer = am::Node::node->create_wall_timer(am::toDuration(1.0/(double)(frames_per_second)), std::bind(&CameraSensor::timerCB, this));
