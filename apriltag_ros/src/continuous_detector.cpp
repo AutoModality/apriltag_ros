@@ -107,8 +107,8 @@ void ContinuousDetector::imageCB(const sensor_msgs::msg::Image::ConstSharedPtr i
   // Lazy updates:
   // When there are no subscribers _and_ when tf is not published,
   // skip detection.
-  if (tag_detections_publisher_->get_subscription_count() == 0 &&
-      tag_detections_image_publisher_.getNumSubscribers() == 0 &&
+  if (cameras_[camera_id].tag_detections_pub->get_subscription_count() == 0 &&
+      cameras_[camera_id].tag_detections_image_publisher.getNumSubscribers() == 0 &&
       !tag_detector_->get_publish_tf())
   {
     // ROS_INFO_STREAM("No subscribers and no tf publishing, skip processing.");
@@ -128,14 +128,14 @@ void ContinuousDetector::imageCB(const sensor_msgs::msg::Image::ConstSharedPtr i
   }
 
   // Publish detected tags in the image by AprilTag 2
-  cameras[camera_id].tag_detections_pub->publish(tag_detector_->detectTags(cv_image_,cameras_[camera_id].camera_info_));
+  cameras_[camera_id].tag_detections_pub->publish(tag_detector_->detectTags(cv_image_,cameras_[camera_id].camera_info_));
 
   // Publish the camera image overlaid by outlines of the detected tags and
   // their payload values
   if (draw_tag_detections_image_)
   {
     tag_detector_->drawDetections(cv_image_);
-    cameras_[camera_id].tag_detections_image_publisher_.publish(cv_image_->toImageMsg());
+    cameras_[camera_id].tag_detections_image_publisher.publish(cv_image_->toImageMsg());
   }
 
   
