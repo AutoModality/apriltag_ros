@@ -128,14 +128,14 @@ void ContinuousDetector::imageCB(const sensor_msgs::msg::Image::ConstSharedPtr i
   }
 
   // Publish detected tags in the image by AprilTag 2
-  camera.tag_detections_pub->publish(tag_detector_->detectTags(cv_image_,cameras_[camera_id].camera_info_));
+  cameras[camera_id].tag_detections_pub->publish(tag_detector_->detectTags(cv_image_,cameras_[camera_id].camera_info_));
 
   // Publish the camera image overlaid by outlines of the detected tags and
   // their payload values
   if (draw_tag_detections_image_)
   {
     tag_detector_->drawDetections(cv_image_);
-    tag_detections_image_publisher_.publish(cv_image_->toImageMsg());
+    cameras_[camera_id].tag_detections_image_publisher_.publish(cv_image_->toImageMsg());
   }
 
   
