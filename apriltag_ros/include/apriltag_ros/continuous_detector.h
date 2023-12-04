@@ -58,10 +58,13 @@ struct CameraSensor
 {
   std::string image_topic;
   std::string camera_info_topic;
+  std::string tag_detection_pub;
+
   int frames_per_second {10};
   bool enabled {false};
   sensor_msgs::msg::CameraInfo camera_info_;
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_sub;
+  rclcpp::Publisher<brain_box_msgs::msg::AprilTagDetectionArray>::SharedPtr tag_detections_pub;
   image_transport::Subscriber image_sub;
   rclcpp::TimerBase::SharedPtr enable_timer;
 
@@ -102,9 +105,7 @@ class ContinuousDetector
 
   image_transport::ImageTransport it_;
   image_transport::Publisher tag_detections_image_publisher_;
-  rclcpp::Publisher<brain_box_msgs::msg::AprilTagDetectionArray>::SharedPtr tag_detections_publisher_;
-  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr caminfo_sub_;
-
+  
   void imageCB(const sensor_msgs::msg::Image::ConstSharedPtr image_rect, int camera_id);
   void camInfoCB(const sensor_msgs::msg::CameraInfo::Ptr cam_info_msg, int camera_id);
 };

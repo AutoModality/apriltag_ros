@@ -63,8 +63,10 @@ ContinuousDetector::ContinuousDetector() :  it_(am::Node::node)
 
     am::getParam<std::string>(camera_param_string + ".camera_info_topic", camera.camera_info_topic, camera.camera_info_topic);
     am::getParam<std::string>(camera_param_string + ".image_topic", camera.image_topic, camera.image_topic);
-    am::getParam<int>(camera_param_string+".frames_per_second", camera.frames_per_second, camera.frames_per_second);
-    
+    am::getParam<int>(camera_param_string + ".frames_per_second", camera.frames_per_second, camera.frames_per_second);
+
+    ROS_INFO(CYAN "%s: %d" COLOR_RSET, std::string(camera_param_string + std::string(".frames_per_second")).c_str(), camera.frames_per_second);
+
     std::function<void(std::shared_ptr<sensor_msgs::msg::CameraInfo>)> fnc = std::bind(&ContinuousDetector::camInfoCB, this, std::placeholders::_1, i);
 		camera.camera_info_sub = am::Node::node->create_subscription<sensor_msgs::msg::CameraInfo>(camera.camera_info_topic, 1, fnc);
     camera.image_sub = it_.subscribe(camera.image_topic, 30, std::bind(&ContinuousDetector::imageCB, this, std::placeholders::_1, i));
