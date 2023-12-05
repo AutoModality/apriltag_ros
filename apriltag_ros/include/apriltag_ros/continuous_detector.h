@@ -54,37 +54,49 @@
 namespace apriltag_ros
 {
 
-struct CameraSensor
+class ApriltagCamera
 {
-  std::string image_topic;
-  std::string camera_info_topic;
-  std::string tag_detection_topic;
-  std::string tag_detection_image_topic;
+public:
+  ApriltagCamera(const std::string &param_key);
 
-  int frames_per_second {10};
-  bool enabled {false};
+  ~ApriltagCamera();
+
+  void print();
+
+  sensor_msgs::msg::CameraInfo getCameraInfo();
+
+  void setCameraInfo(const sensor_msgs::msg::CameraInfo::SharedPtr &ci)
+  {
+    camera_info_ = *ci;
+  }
+  
+
+private:
+  image_transport::ImageTransport it_;
+
+  void getParams(const std::string &param_key);
+  void enableTimerCB();
+  void imageCB(const sensor_msgs::msg::Image::ConstSharedPtr image_rect);
+  void camInfoCB(const sensor_msgs::msg::CameraInfo::Ptr cam_info_msg);
+
+  std::string image_topic_;
+  std::string camera_info_topic_;
+  std::string tag_detection_topic_;
+  std::string tag_detection_image_topic_;
+
+  int frames_per_second_ {10};
+  bool enabled_ {false};
+  bool draw_tag_detections_image_ {false};
+
   sensor_msgs::msg::CameraInfo camera_info_;
-  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_sub;
-  rclcpp::Publisher<brain_box_msgs::msg::AprilTagDetectionArray>::SharedPtr tag_detections_pub;
-  image_transport::Publisher tag_detections_image_publisher;
-  image_transport::Subscriber image_sub;
-  rclcpp::TimerBase::SharedPtr enable_timer;
+  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_sub_;
+  rclcpp::Publisher<brain_box_msgs::msg::AprilTagDetectionArray>::SharedPtr tag_detections_pub_;
+  image_transport::Publisher tag_detections_image_publisher_;
+  image_transport::Subscriber image_sub_;
+  rclcpp::TimerBase::SharedPtr enable_timer_;
+  std::shared_ptr<TagDetector> tag_detector_;
+  cv_bridge::CvImagePtr cv_image_;
 
-  void print()
-  {
-    ROS_INFO(GREEN "image_topic: %s, camera_info_topic: %s, tag_detection_topic: %s, tag_detection_image_topic: %s, frames_per_second: %d" COLOR_RESET, image_topic.c_str(), 
-    camera_info_topic.c_str(), tag_detection_topic.c_str(), tag_detection_image_topic.c_str(), frames_per_second);
-  }
-
-  void setupTimer()
-  {
-    enable_timer = am::Node::node->create_wall_timer(am::toDuration(1.0/(double)(frames_per_second)), std::bind(&CameraSensor::timerCB, this));
-  }
-
-  void timerCB()
-  {
-    enabled = true;
-  }
 };
 
 class ContinuousDetector
@@ -98,24 +110,12 @@ class ContinuousDetector
 
   
  private:
-
-  int frames_per_second_ = 5;
   int camera_cnt_ = 0;
-  std::mutex detection_mutex_;
-  std::shared_ptr<TagDetector> tag_detector_;
   bool draw_tag_detections_image_ {false};
-  cv_bridge::CvImagePtr cv_image_;
 
-  std::vector<CameraSensor> cameras_;
-  rclcpp::TimerBase::SharedPtr enable_timer_;
-  void enableTimerCB();
-  bool enabled_ {false};
+  std::vector<std::shared_ptr<ApriltagCamera>> cameras_;
 
-  image_transport::ImageTransport it_;
   
-  
-  void imageCB(const sensor_msgs::msg::Image::ConstSharedPtr image_rect, int camera_id);
-  void camInfoCB(const sensor_msgs::msg::CameraInfo::Ptr cam_info_msg, int camera_id);
 };
 
 } // namespace apriltag_ros
