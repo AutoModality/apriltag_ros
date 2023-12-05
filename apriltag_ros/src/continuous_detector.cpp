@@ -113,7 +113,7 @@ void ContinuousDetector::imageCB(const sensor_msgs::msg::Image::ConstSharedPtr i
       cameras_[camera_id].tag_detections_image_publisher.getNumSubscribers() == 0 &&
       !tag_detector_->get_publish_tf())
   {
-    // ROS_INFO_STREAM("No subscribers and no tf publishing, skip processing.");
+    //ROS_INFO("No subscribers and no tf publishing, skip processing.");
     return;
   }
 
